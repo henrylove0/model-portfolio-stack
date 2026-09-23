@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+.vercel
+
+# Local env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Raw + optimized photo working dirs (images live in R2, not git)
+photos-src
+r2-upload
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

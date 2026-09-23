@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>The Free Model Stack</title>
+<style>
+  @font-face {
+    font-family: 'Jost';
+    src: url('file:///tmp/jost/Jost.ttf') format('truetype');
+    font-weight: 100 900;
+  }
+  @font-face {
+    font-family: 'Jost';
+    src: url('file:///tmp/jost/Jost-Italic.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: italic;
+  }
+
+  :root {
+    --bg: #f2efe9;
+    --ink: #17140f;
+    --muted: rgba(23, 20, 15, 0.55);
+    --faint: rgba(23, 20, 15, 0.38);
+    --line: rgba(23, 20, 15, 0.16);
+    --sans: 'Jost', Futura, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page { size: A4; margin: 0; }
+
+  html, body { font-family: var(--sans); color: var(--ink); }
+
+  .page {
+    position: relative;
+    width: 210mm;
+    height: 295.8mm;
+    padding: 20mm 19mm 24mm;
+    background: var(--bg);
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  .dark {
+    --muted: rgba(242, 239, 233, 0.55);
+    --faint: rgba(242, 239, 233, 0.35);
+    --line: rgba(242, 239, 233, 0.2);
+    background: #14110d;
+    color: var(--bg);
+  }
+
+  .label {
+    font-size: 8.5px;
+    font-weight: 400;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .ghost {
+    position: absolute;
+    right: 10mm;
+    top: 8mm;
+    font-size: 190px;
+    font-weight: 100;
+    line-height: 1;
+    color: var(--ink);
+    opacity: 0.05;
+    pointer-events: none;
+  }
+  .dark .ghost { color: var(--bg); }
+
+  h2 {
+    font-size: 30px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    margin: 6mm 0 4mm;
+    text-wrap: balance;
+  }
+
+  .lede {
+    font-size: 12.5px;
+    font-weight: 400;
+    line-height: 1.8;
+    max-width: 60ch;
+    margin-bottom: 9mm;
+  }
+
+  p, li { font-size: 10.5px; line-height: 1.75; }
+  p { color: var(--ink); max-width: 62ch; }
+  .muted { color: var(--muted); }
+
+  .rule { border: 0; border-top: 1px solid var(--line); }
+
+  .foot {
+    position: absolute;
+    left: 19mm; right: 19mm; bottom: 11mm;
+    display: flex; justify-content: space-between;
+    font-size: 7.5px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--faint);
+    border-top: 1px solid var(--line);
+    padding-top: 3.5mm;
+  }
+
+  /* ---------- lists with hairlines ---------- */
+  .rows { border-bottom: 1px solid var(--line); margin-bottom: 7mm; }
+  .row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10mm;
+    padding: 3.4mm 0;
+    border-top: 1px solid var(--line);
+  }
+  .row .k { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 400; }
+  .row .v { font-size: 10.5px; text-align: right; color: var(--muted); max-width: 95mm; }
+
+  .big-list { list-style: none; border-bottom: 1px solid var(--line); }
+  .big-list li {
+    display: flex; align-items: baseline; gap: 8mm;
+    padding: 4.6mm 0;
+    border-top: 1px solid var(--line);
+  }
+  .big-list .n { font-size: 9px; letter-spacing: 0.2em; color: var(--faint); min-width: 10mm; }
+  .big-list .t { font-size: 15px; font-weight: 300; letter-spacing: 0.03em; }
+  .big-list .d { font-size: 10px; color: var(--muted); margin-top: 1mm; line-height: 1.6; }
+
+  /* ---------- steps ---------- */
+  .steps { counter-reset: step; border-bottom: 1px solid var(--line); }
+  .step { display: flex; gap: 8mm; padding: 4.2mm 0; border-top: 1px solid var(--line); }
+  .step::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    font-size: 9px; letter-spacing: 0.2em; color: var(--faint);
+    min-width: 10mm; padding-top: 1.2mm;
+  }
+  .step .s-title { font-size: 12.5px; font-weight: 400; margin-bottom: 1mm; }
+  .step p { font-size: 10px; color: var(--muted); }
+
+  /* ---------- diagram ---------- */
+  .diagram { margin: 8mm 0 10mm; }
+  .d-row { display: flex; align-items: center; gap: 6mm; margin-bottom: 5mm; }
+  .d-from {
+    width: 40mm; padding: 4mm 0;
+    font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase; text-align: center;
+    border: 1px solid var(--line);
+  }
+  .d-arrow { flex: 1; position: relative; height: 1px; background: var(--line); }
+  .d-arrow::after {
+    content: ''; position: absolute; right: 0; top: -2.2px;
+    width: 5px; height: 5px; border-top: 1px solid var(--muted); border-right: 1px solid var(--muted);
+    transform: rotate(45deg);
+  }
+  .d-note { width: 62mm; font-size: 8.5px; color: var(--muted); line-height: 1.5; }
+  .d-to {
+    width: 52mm; padding: 4.5mm 0; text-align: center;
+    font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
+    border: 1px solid var(--ink);
+  }
+  .d-cap { font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--faint); text-align: center; margin-top: 1.5mm; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border: 1px solid var(--line);
+    padding: 6mm 7mm;
+    margin-top: 8mm;
+  }
+  .callout .c-label { margin-bottom: 2.5mm; }
+  .callout p { font-size: 10px; }
+  .callout strong { font-weight: 500; }
+
+  /* ---------- cover ---------- */
+  .cover { display: flex; flex-direction: column; }
+  .cover .top { display: flex; justify-content: space-between; }
+  .cover .middle { margin-top: 52mm; }
+  .cover h1 {
+    font-size: 62px; font-weight: 200; line-height: 1.04; letter-spacing: 0.01em;
+    margin: 10mm 0 8mm;
+  }
+  .cover .sub {
+    font-size: 13px; font-weight: 300; line-height: 1.85;
+    color: var(--muted); max-width: 56ch;
+  }
+  .cover .bottom { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; }
+
+  .stat-row { display: flex; gap: 14mm; margin-top: 14mm; }
+  .stat .s-num { font-size: 34px; font-weight: 200; }
+  .stat .s-cap { font-size: 8px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--faint); margin-top: 1.5mm; }
+
+  /* ---------- two-col ---------- */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 9mm; }
+
+  .avoid-break { break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<section class="page dark cover">
+  <div class="top">
+    <span class="label">Open Free Resources</span>
+    <span class="label">Edition 01 — 2026</span>
+  </div>
+  <div class="middle">
+    <span class="label">A portfolio website for models</span>
+    <h1>The Free<br/>Model Stack</h1>
+    <p class="sub">
+      An emrata-style portfolio with fullscreen slideshows and a drag-and-drop
+      content system — engineered to serve your photos in true 4K to roughly
+      1.6&nbsp;million visitors a month, for zero dollars. This document explains,
+      in plain language, how every piece works and how to run it.
+    </p>
+    <div class="stat-row">
+      <div class="stat"><div class="s-num">$0</div><div class="s-cap">per month, always</div></div>
+      <div class="stat"><div class="s-num">4K</div><div class="s-cap">photo quality</div></div>
+      <div class="stat"><div class="s-num">~1.6M</div><div class="s-cap">visitors / month</div></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <span class="label">Built on Vercel + Cloudflare R2</span>
+    <span class="label">Open Source · MIT</span>
+  </div>
+</section>
+
+<!-- ============================ 01 WHAT YOU GET ============================ -->
+<section class="page">
+  <span class="ghost">01</span>
+  <span class="label">01 — What you get</span>
+  <h2>A site that behaves like the ones you already admire.</h2>
+  <p class="lede">Nothing templated-looking. One uninterrupted photograph at a time, your name set in quiet type, and nothing else competing for attention.</p>
+
+  <ul class="big-list">
+    <li><span class="n">01</span><div><div class="t">A fullscreen home slideshow</div><div class="d">Your strongest images, one at a time — a new photograph every few seconds, click the left or right edge to move through.</div></div></li>
+    <li><span class="n">02</span><div><div class="t">Up to twenty project galleries</div><div class="d">Campaigns, editorials, tests — each its own left-to-right carousel, titled however you like.</div></div></li>
+    <li><span class="n">03</span><div><div class="t">About &amp; contact pages</div><div class="d">Your story, measurements, representation — with a contact page that routes enquiries to your agencies by region.</div></div></li>
+    <li><span class="n">04</span><div><div class="t">A private admin you actually enjoy</div><div class="d">Drag, drop, reorder, done. No developer needed to run it day to day. Changes are live within a minute.</div></div></li>
+    <li><span class="n">05</span><div><div class="t">Your own domain</div><div class="d">yourname.com — plus a private admin.yourname.com for you. Included in the setup.</div></div></li>
+  </ul>
+
+  <div class="callout">
+    <div class="label c-label">The design</div>
+    <p>Ivory paper, ink type, hairline rules — a Futura-style face (Jost) with wide letterspacing, set like a printed lookbook. Swap the font or palette in two lines of code when your book evolves.</p>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>01 / 08</span></div>
+</section>
+
+<!-- ============================ 02 WHY IT'S FREE ============================ -->
+<section class="page">
+  <span class="ghost">02</span>
+  <span class="label">02 — Why it’s free</span>
+  <h2>Free stops working only if you step on two specific rakes.</h2>
+  <p class="lede">Hosting a photo-heavy site costs money on most platforms because they meter the two heaviest things — image processing and bandwidth. This stack is arranged so that neither one is ever metered.</p>
+
+  <div class="cols">
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">Trap one · the optimizer cap</div>
+      <p class="muted" style="margin-bottom:4mm">If a site builder “optimizes” your photos for you, the free plan typically includes about <strong>1,000 images a month</strong>. Your homepage slideshow alone could be twenty. Thirteen visitors and you’re done.</p>
+      <p class="muted">This stack does the opposite: your photos are prepared once, beautifully, before they’re ever uploaded — so no optimizer ever touches them. There is nothing to count.</p>
+    </div>
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">Trap two · the bandwidth cap</div>
+      <p class="muted" style="margin-bottom:4mm">Free front-ends usually meter data — around <strong>100 GB a month</strong>. If your photos travelled through that front-end, a hundred high-quality images (≈ 300 MB per gallery pass) would exhaust it after roughly <strong>350 visitors</strong>.</p>
+      <p class="muted">Here the photos never pass through it. They’re delivered by Cloudflare’s global network directly, where egress costs nothing.</p>
+    </div>
+  </div>
+
+  <hr class="rule" style="margin:9mm 0 5mm" />
+  <div class="label" style="margin-bottom:4mm">What the free plans allow, and what this site uses</div>
+  <div class="rows">
+    <div class="row"><span class="k">Vercel · site code</span><span class="v">100 GB/mo — one visitor downloads ≈ 65 KB → about 1.6M visitors</span></div>
+    <div class="row"><span class="k">Vercel · processing</span><span class="v">125k operations — visitors use ~0; only your admin logins</span></div>
+    <div class="row"><span class="k">Cloudflare R2 · storage</span><span class="v">10 GB free — 100 photos ≈ 0.3 GB</span></div>
+    <div class="row"><span class="k">Cloudflare R2 · delivery</span><span class="v">egress is always free; edge cache absorbs repeat views</span></div>
+  </div>
+
+  <div class="callout">
+    <div class="label c-label">The one sentence version</div>
+    <p><strong>Your code comes from Vercel; your photographs come from Cloudflare.</strong> Each platform meters only the thing that’s tiny, and gives away the thing that’s heavy.</p>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>02 / 08</span></div>
+</section>
+
+<!-- ============================ 03 HOW IT WORKS ============================ -->
+<section class="page">
+  <span class="ghost">03</span>
+  <span class="label">03 — How it works</span>
+  <h2>Two specialists, one seamless site.</h2>
+  <p class="lede">When someone opens your site, their browser quietly asks two different companies for two different kinds of thing — and stitches them into one experience.</p>
+
+  <div class="diagram">
+    <div class="d-row">
+      <div class="d-from">Your visitor</div>
+      <div class="d-arrow"></div>
+      <div class="d-note">the page itself — text, layout, the slideshow engine. Tiny: about the size of one photograph’s thumbnail.</div>
+      <div class="d-to">Vercel</div>
+    </div>
+    <div class="d-cap">≈ 65 KB — could be served millions of times inside the free plan</div>
+    <div style="height:7mm"></div>
+    <div class="d-row">
+      <div class="d-from">Your visitor</div>
+      <div class="d-arrow"></div>
+      <div class="d-note">the photographs — your 4K WebP files, delivered from the data center nearest to each visitor. Never counted against the site.</div>
+      <div class="d-to">Cloudflare R2</div>
+    </div>
+    <div class="d-cap">≈ 2–3.5 MB each — free egress, cached at the edge worldwide</div>
+  </div>
+
+  <hr class="rule" style="margin:8mm 0 5mm" />
+  <div class="label" style="margin-bottom:4mm">Three quiet ideas underneath</div>
+  <div class="steps">
+    <div class="step"><div><div class="s-title">The manifest</div><p>One small file in the cloud is the single source of truth: which photos belong to which slideshow. Your admin rewrites it; the website reads it. No database, no rebuild, no waiting on a developer.</p></div></div>
+    <div class="step"><div><div class="s-title">Prepared photos</div><p>Before upload, every photo is resized to a maximum of 3840 pixels (true 4K) and encoded as WebP at high quality — about 1.5–3.5 MB instead of 35 MB, indistinguishable on screen. The heavy original never travels.</p></div></div>
+    <div class="step"><div><div class="s-title">A locked door</div><p>The admin sits behind a password of your choosing (stored as an irreversible fingerprint, never as text). Sessions expire; brute-force attempts are throttled. Only you rearrange your book.</p></div></div>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>03 / 08</span></div>
+</section>
+
+<!-- ============================ 04 RUNNING YOUR SITE ============================ -->
+<section class="page">
+  <span class="ghost">04</span>
+  <span class="label">04 — Running your site</span>
+  <h2>The admin: your book, on your schedule.</h2>
+  <p class="lede">Everything on the site is movable with a drag. Open admin.yourname.com on any device — there is no app to install and nothing to learn beyond dragging.</p>
+
+  <div class="steps">
+    <div class="step"><div><div class="s-title">Sign in</div><p>One password. Your session remembers you for a week on each device.</p></div></div>
+    <div class="step"><div><div class="s-title">Choose a shelf</div><p>A sidebar lists Home Slideshow, About Photo, and every project — up to twenty. Pick one.</p></div></div>
+    <div class="step"><div><div class="s-title">Drop photos — one or twenty at once</div><p>Drag files straight from your desktop, or click to browse. Multiple files queue automatically, with progress for each.</p></div></div>
+    <div class="step"><div><div class="s-title">Arrange by dragging</div><p>Drag any photo onto another slot to reorder. Drop on the dashed box to send it to the end. Small arrows nudge by one.</p></div></div>
+    <div class="step"><div><div class="s-title">Move between galleries</div><p>Every photo carries a “Move to…” control — send it from Home to Project 07 in one click. Retitle any project inline.</p></div></div>
+    <div class="step"><div><div class="s-title">That’s it — it saves itself</div><p>Every change writes itself and is live worldwide within about a minute. There is no publish button to forget.</p></div></div>
+  </div>
+
+  <div class="callout">
+    <div class="label c-label">Golden rule</div>
+    <p><strong>Always add photos through the admin — never into cloud storage directly.</strong> The admin is what tells the website the photo exists. Files dropped into storage alone would sit there unseen.</p>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>04 / 08</span></div>
+</section>
+
+<!-- ============================ 05 YOUR PHOTOS ============================ -->
+<section class="page">
+  <span class="ghost">05</span>
+  <span class="label">05 — Your photos</span>
+  <h2>Shoot huge. The stack handles the rest.</h2>
+  <p class="lede">Camera originals of any size — including 35 MB, 6000×9000 medium-format files — are exactly what this was built around. Nothing about your workflow needs to shrink.</p>
+
+  <div class="cols" style="margin-bottom:8mm">
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">What happens to each file</div>
+      <div class="rows">
+        <div class="row"><span class="k">In</span><span class="v">your original, any resolution</span></div>
+        <div class="row"><span class="k">Resize</span><span class="v">longest edge → 3840 px (4K)</span></div>
+        <div class="row"><span class="k">Encode</span><span class="v">WebP, quality 85 — visually lossless</span></div>
+        <div class="row"><span class="k">Guard</span><span class="v">if still large, quality steps down until it fits</span></div>
+        <div class="row"><span class="k">Out</span><span class="v">≈ 1.5–3.5 MB, ready for the world</span></div>
+      </div>
+      <p class="muted">Sharp on a phone, exact on a 4K monitor. Conversion happens in your browser the moment you drop the file — originals never leave your computer.</p>
+    </div>
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">Practical notes</div>
+      <div class="rows">
+        <div class="row"><span class="k">One hundred photos</span><span class="v">select all, drop once — they queue in order</span></div>
+        <div class="row"><span class="k">Orientation</span><span class="v">vertical 4:5 reads best fullscreen</span></div>
+        <div class="row"><span class="k">Keep originals</span><span class="v">the stored WebPs are masters, not backups</span></div>
+        <div class="row"><span class="k">Huge batches</span><span class="v">a desktop script converts a folder offline first</span></div>
+        <div class="row"><span class="k">Replacing</span><span class="v">drop a new file onto any slot — old slot only</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label c-label">Before you upload</div>
+    <p>Pick your final selects. The slideshow is a curated book, not an archive — twenty remarkable images hold attention better than two hundred good ones. Keep the archive in your own storage; put the statement online.</p>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>05 / 08</span></div>
+</section>
+
+<!-- ============================ 06 BEFORE LAUNCH ============================ -->
+<section class="page">
+  <span class="ghost">06</span>
+  <span class="label">06 — Before launch</span>
+  <h2>A ten-minute checklist before you share the link.</h2>
+  <p class="lede">Most of this is done once, by whoever sets the site up for you. Keep this page for the day you take the keys.</p>
+
+  <div class="steps">
+    <div class="step"><div><div class="s-title">Lock the admin</div><p>Remove “open access” testing mode so the password is required again. Two clicks in the hosting dashboard and one redeploy.</p></div></div>
+    <div class="step"><div><div class="s-title">Connect your domain</div><p>yourname.com and admin.yourname.com, verified in the hosting dashboard. HTTPS is automatic.</p></div></div>
+    <div class="step"><div><div class="s-title">Make it yours</div><p>Real Instagram handle, real email, agency names and regions, your story and measurements. Each is one short text edit.</p></div></div>
+    <div class="step"><div><div class="s-title">The single-photo test</div><p>Drop one photo into the home slideshow. Within a minute it should appear on the live site — that proves the whole pipeline end to end.</p></div></div>
+    <div class="step"><div><div class="s-title">The zero-bytes test</div><p>Open the site with the browser’s developer tools → Network tab. Reload and click through: every photograph’s address should show your Cloudflare domain — never the hosting one. If any photo loads from the host, something is proxying and the free plan is bleeding.</p></div></div>
+    <div class="step"><div><div class="s-title">Phone check</div><p>Swipe the slideshow, open every gallery, tap every menu. The site is fully responsive — confirm it feels like you.</p></div></div>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>06 / 08</span></div>
+</section>
+
+<!-- ============================ 07 WHEN YOU BLOW UP ============================ -->
+<section class="page">
+  <span class="ghost">07</span>
+  <span class="label">07 — When you blow up</span>
+  <h2>What happens if the internet falls in love with you.</h2>
+  <p class="lede">A press feature, a viral campaign, a million visits in a week — the stack absorbs far more than you’ll realistically hit. Here is the honest ceiling map.</p>
+
+  <div class="rows" style="margin-top:2mm">
+    <div class="row"><span class="k">The first ceiling</span><span class="v">Vercel’s 100 GB — at roughly 1.6M monthly visitors. The dashboard shows usage; you’d see it coming weeks out.</span></div>
+    <div class="row"><span class="k">Photos</span><span class="v">effectively uncapped — Cloudflare doesn’t meter their bandwidth at all</span></div>
+    <div class="row"><span class="k">Storage</span><span class="v">10 GB ≈ 3,000 photos; years of galleries</span></div>
+    <div class="row"><span class="k">If you hit it</span><span class="v">the host pauses the site until the month resets — it emails you first; nothing is lost</span></div>
+    <div class="row"><span class="k">The fix, when needed</span><span class="v">one paid plan (~$20/mo) multiplies the ceiling ~10×; everything else stays free</span></div>
+  </div>
+
+  <hr class="rule" style="margin:9mm 0 5mm" />
+  <div class="cols">
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">If the site changes hands</div>
+      <p class="muted">Everything transfers cleanly: the code lives in a git repository, the photos in your own cloud bucket, and both platforms invite the new owner via email. An afternoon, with zero downtime.</p>
+    </div>
+    <div class="avoid-break">
+      <div class="label" style="margin-bottom:3mm">If you want changes</div>
+      <p class="muted">Typography, palette, page structure, number of galleries — the codebase is small, commented, and built on the most common tools in the industry. Any competent developer can run with it.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label c-label">The promise</div>
+    <p><strong>Between here and a million visitors a month, the budget does not move.</strong> You will outgrow agencies, cameras and calendars long before you outgrow this bill.</p>
+  </div>
+
+  <div class="foot"><span>The Free Model Stack</span><span>07 / 08</span></div>
+</section>
+
+<!-- ============================ COLOPHON ============================ -->
+<section class="page dark">
+  <span class="ghost">08</span>
+  <div style="margin-top:60mm">
+    <span class="label">08 — Colophon</span>
+    <h2 style="font-size:34px">Make it yours.</h2>
+    <p class="lede" style="color:var(--muted)">
+      The complete stack — code, admin, deployment runbook, and an AI-agent skill that
+      rebuilds the whole system from a single instruction — is open source under the MIT
+      license. Copy it, restyle it, hand it to your developer, or let an AI assistant walk
+      you through setup using the included skill.
+    </p>
+    <div class="rows">
+      <div class="row"><span class="k">Frontend</span><span class="v">Vite + React + TypeScript, editorial design system</span></div>
+      <div class="row"><span class="k">Hosting</span><span class="v">Vercel free tier</span></div>
+      <div class="row"><span class="k">Photographs</span><span class="v">Cloudflare R2, edge-cached, free egress</span></div>
+      <div class="row"><span class="k">Content system</span><span class="v">drag-and-drop admin, manifest-driven, no database</span></div>
+      <div class="row"><span class="k">Typeface</span><span class="v">Jost — open Futura revival</span></div>
+      <div class="row"><span class="k">License</span><span class="v">MIT — yours, permanently</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>The Free Model Stack — Open Free Resources</span><span>08 / 08</span></div>
+</section>
+
+</body>
+</html>

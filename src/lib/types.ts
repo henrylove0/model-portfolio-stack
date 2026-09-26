@@ -9,6 +9,8 @@ export interface Project {
 export interface SiteManifest {
   updatedAt: string
   home: string[]
+  /** Portrait home slideshow shown on phones; falls back to `home` when empty. */
+  homeMobile?: string[]
   about: string[]
   projects: Project[]
 }

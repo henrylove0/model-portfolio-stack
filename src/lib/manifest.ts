@@ -43,6 +43,14 @@ export function isSafeKey(key: unknown): key is string {
  * falls back to the Vercel API proxy, then to `null` (caller uses defaults).
  */
 export async function fetchManifest(): Promise<SiteManifest | null> {
+  // First call: reuse the request index.html started before the bundle loaded.
+  const w = window as { __siteManifest?: Promise<unknown> }
+  const early = w.__siteManifest
+  if (early) {
+    w.__siteManifest = undefined
+    const data = await early
+    if (isManifest(data)) return data
+  }
   const urls = [MANIFEST_URL, '/api/manifest'].filter(Boolean)
   for (const url of urls) {
     try {

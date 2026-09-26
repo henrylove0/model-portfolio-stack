@@ -80,12 +80,20 @@ What's already built in, per device:
 
 - **Everywhere:** single-page app (no reloads between galleries), the next slideshow
   photo preloads in the background while you view the current one, photos use
-  GPU-friendly CSS transitions (no jank), and all photos are cached at Cloudflare's
-  edge — a visitor in Tokyo loads from Tokyo, not from one origin server.
+  GPU-friendly CSS transitions (no jank), and — once the bucket has a custom domain —
+  all photos are cached at Cloudflare's edge, so a visitor in Tokyo loads from Tokyo,
+  not from one origin server. (The temporary `r2.dev` URL is **not** edge-cached; see
+  Quick start step 4.)
+- **Photos download once:** the photo list request starts in `index.html` before the
+  app code has loaded, the browser opens its connection to the photo host
+  immediately, and the home slideshow waits for the live list instead of first
+  loading built-in images and then swapping them out.
 - **Desktop:** arrow-key navigation, edge-click zones with hover arrows, `object-fit:
   cover` so vertical 4:5 images fill any window without distortion, fullscreen 4K
   quality on retina/4K displays.
-- **Mobile:** swipe left/right to change photos, `100dvh` sizing that follows the
+- **Mobile:** an optional separate portrait home slideshow for phones (admin section
+  "Home Slideshow (Mobile)"; phones fall back to the regular home set when it's
+  empty), swipe left/right to change photos, `100dvh` sizing that follows the
   real viewport ( Safari's dynamic URL bar ), a full-screen menu overlay under 900px,
   tap-sized admin controls, and lazy-loaded thumbnails in the CMS.
 - **Data-conscious:** photos are WebP (universally supported since 2020); code assets
@@ -143,7 +151,11 @@ npm install
 3. **Deploy** — [Vercel](https://vercel.com) → Add New Project → import the repo.
 4. **Create an R2 bucket** (Cloudflare dashboard) named `model-portfolio`, an API token
    with Object Read & Write, and connect a custom domain (`cdn.yourdomain.com`) — or
-   temporarily use the bucket's public r2.dev URL.
+   temporarily use the bucket's public r2.dev URL. The r2.dev URL is for testing only:
+   Cloudflare rate-limits it and does not edge-cache it, so first visits load noticeably
+   slower. Move to a custom domain before you promote the site.
+   New Cloudflare accounts must first switch R2 on (dashboard → R2 → Purchase R2; a
+   card is required even on the free tier) — until then every R2 call fails.
 5. **Set environment variables** in Vercel → Settings → Environment Variables:
 
    | Variable | Value |
@@ -156,13 +168,17 @@ npm install
    | `SESSION_SECRET` | `openssl rand -hex 32` |
 
    Optional while testing: `CMS_DISABLE_AUTH=1` opens the CMS without a password —
-   **remove it before launch**.
+   **remove it before launch**. Once R2 is connected, an open CMS lets anyone who finds
+   `/admin` replace your live photos.
+
+   `VITE_R2_PUBLIC_URL` is baked in at build time — after changing it, redeploy.
 6. **Redeploy**, open `https://your-site.vercel.app/admin`, and start dropping photos.
    Changes are live worldwide within about a minute — no rebuilds.
 
 ## Using the admin
 
-- Drop one or many photos onto a section (Home, About, or any Project) — they queue
+- Drop one or many photos onto a section (Home, Home (Mobile), About, or any
+  Project) — they queue
   automatically and are converted to 4K WebP in your browser before upload.
 - Drag a photo onto another slot to reorder; use its **Move to…** control to send it to
   a different gallery; retitle projects inline. Everything autosaves.

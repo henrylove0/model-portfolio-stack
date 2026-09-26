@@ -14,12 +14,18 @@ interface ManifestState {
   manifest: SiteManifest
   /** true once the live manifest has been loaded from R2/Vercel */
   live: boolean
+  /** true once the first manifest fetch has finished (or given up), so photos load once */
+  settled: boolean
   reload: () => void
 }
+
+/** Stop waiting for the live manifest after this long and fall back to built-in photos. */
+const MANIFEST_WAIT_MS = 3000
 
 const ManifestContext = createContext<ManifestState>({
   manifest: defaultManifest,
   live: false,
+  settled: false,
   reload: () => undefined,
 })
 
@@ -40,20 +46,27 @@ export default function App() {
   const [state, setState] = useState<ManifestState>({
     manifest: defaultManifest,
     live: false,
+    settled: false,
     reload: () => undefined,
   })
 
   useEffect(() => {
     let cancelled = false
+    const giveUp = window.setTimeout(() => setState((s) => ({ ...s, settled: true })), MANIFEST_WAIT_MS)
     const load = async () => {
       const live = await fetchManifest()
-      if (!cancelled && live) {
-        setState((s) => ({ ...s, manifest: mergeWithDefaults(live), live: true }))
-      }
+      window.clearTimeout(giveUp)
+      if (cancelled) return
+      setState((s) =>
+        live
+          ? { ...s, manifest: mergeWithDefaults(live), live: true, settled: true }
+          : { ...s, settled: true },
+      )
     }
     void load()
     return () => {
       cancelled = true
+      window.clearTimeout(giveUp)
     }
   }, [])
 
@@ -93,5 +106,6 @@ function mergeWithDefaults(live: SiteManifest): SiteManifest {
     const found = live.projects.find((p) => p.slug === d.slug)
     return found ? { ...d, title: found.title || d.title, images: found.images } : d
   })
-  return { ...live, projects }
+  const homeMobile = live.homeMobile ?? defaultManifest.homeMobile
+  return { ...live, homeMobile, projects }
 }

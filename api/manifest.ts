@@ -52,6 +52,7 @@ function sanitize(input: any): unknown | null {
   if (typeof input !== 'object' || input === null) return null
   if (typeof input.updatedAt !== 'string') return null
   if (!keys(input.home) || !keys(input.about) || !Array.isArray(input.projects)) return null
+  if (input.homeMobile !== undefined && !keys(input.homeMobile)) return null
   const projects = input.projects.map((p: any) => {
     if (typeof p !== 'object' || p === null) return null
     if (typeof p.slug !== 'string' || !/^[a-z0-9-]{1,40}$/.test(p.slug)) return null

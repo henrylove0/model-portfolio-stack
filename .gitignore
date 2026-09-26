@@ -29,3 +29,6 @@ npm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Wrangler local dev state (miniflare R2 emulation)
+.wrangler

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { imageUrl } from '../lib/manifest'
+import { SITE_NAME } from '../site.config'
 
 interface Slide {
   key: number
@@ -107,7 +108,7 @@ export default function Slideshow({
   if (count === 0) {
     return (
       <div className="slideshow slideshow-empty">
-        <p className="slideshow-empty-mark">NAYA LIMA</p>
+        <p className="slideshow-empty-mark">{SITE_NAME}</p>
         <p className="slideshow-empty-note">Photography coming soon</p>
       </div>
     )

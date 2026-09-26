@@ -15,6 +15,7 @@ const STATUS_LABEL: Record<SaveState, string> = {
 
 const MOVE_TARGETS: { value: string; label: string }[] = [
   { value: 'home', label: 'Home Slideshow' },
+  { value: 'home-mobile', label: 'Home Slideshow (Mobile)' },
   { value: 'about', label: 'About Photo' },
 ]
 
@@ -117,12 +118,20 @@ export default function Manager({ onLogout }: ManagerProps) {
   }
 
   const project = manifest.projects.find((p) => p.slug === tab)
-  const images = tab === 'home' ? manifest.home : tab === 'about' ? manifest.about : (project?.images ?? [])
+  const images =
+    tab === 'home'
+      ? manifest.home
+      : tab === 'home-mobile'
+        ? (manifest.homeMobile ?? [])
+        : tab === 'about'
+          ? manifest.about
+          : (project?.images ?? [])
   const section = tab
 
   const updateImages = (updater: (imgs: string[]) => string[]) => {
     const next: SiteManifest = { ...manifest, updatedAt: new Date().toISOString() }
     if (tab === 'home') next.home = updater(manifest.home)
+    else if (tab === 'home-mobile') next.homeMobile = updater(manifest.homeMobile ?? [])
     else if (tab === 'about') next.about = updater(manifest.about)
     else
       next.projects = manifest.projects.map((p) =>
@@ -150,6 +159,7 @@ export default function Manager({ onLogout }: ManagerProps) {
     const next: SiteManifest = { ...manifest, updatedAt: new Date().toISOString() }
     const takeOut = (imgs: string[]) => imgs.filter((_, i) => i !== index)
     if (tab === 'home') next.home = takeOut(manifest.home)
+    else if (tab === 'home-mobile') next.homeMobile = takeOut(manifest.homeMobile ?? [])
     else if (tab === 'about') next.about = takeOut(manifest.about)
     else
       next.projects = manifest.projects.map((p) =>
@@ -158,6 +168,7 @@ export default function Manager({ onLogout }: ManagerProps) {
 
     const putIn = (imgs: string[]) => [...imgs, key]
     if (target === 'home') next.home = putIn(next.home)
+    else if (target === 'home-mobile') next.homeMobile = putIn(next.homeMobile ?? [])
     else if (target === 'about') next.about = putIn(next.about)
     else
       next.projects = next.projects.map((p) =>
@@ -275,6 +286,12 @@ export default function Manager({ onLogout }: ManagerProps) {
           <button className={tab === 'home' ? 'is-active' : ''} onClick={() => setTab('home')}>
             Home Slideshow
           </button>
+          <button
+            className={tab === 'home-mobile' ? 'is-active' : ''}
+            onClick={() => setTab('home-mobile')}
+          >
+            Home Slideshow (Mobile)
+          </button>
           <button className={tab === 'about' ? 'is-active' : ''} onClick={() => setTab('about')}>
             About Photo
           </button>
@@ -295,7 +312,13 @@ export default function Manager({ onLogout }: ManagerProps) {
         <header className="admin-head">
           <div>
             <h1 className="admin-title">
-              {tab === 'home' ? 'Home Slideshow' : tab === 'about' ? 'About Photo' : (project?.title ?? tab)}
+              {tab === 'home'
+                ? 'Home Slideshow'
+                : tab === 'home-mobile'
+                  ? 'Home Slideshow (Mobile)'
+                  : tab === 'about'
+                    ? 'About Photo'
+                    : (project?.title ?? tab)}
             </h1>
             {project && (
               <input

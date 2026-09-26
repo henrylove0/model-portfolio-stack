@@ -305,7 +305,33 @@ button {
   opacity: 1;
 }
 
-/* Desktop home filmstrip: current pair centred, dimmed edges of the neighbours peek in. */
+/* Soft dark fade under the menu so its links stay readable over bright photos.
+   Sits above the photos, below the arrows/counter, and never takes clicks. */
+.slideshow::after,
+.peek::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: calc(var(--nav-height) + 90px);
+  background: linear-gradient(
+    to bottom,
+    rgba(8, 7, 5, 0.5) 0%,
+    rgba(8, 7, 5, 0.22) 55%,
+    rgba(8, 7, 5, 0) 100%
+  );
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* On photo pages the menu is plain white on that fade. Its colour-inverting blend turns
+   grey-on-grey over mid-tone photos (e.g. a bright wall under the fade). Pages without
+   photos, and the open phone menu (ivory panel), keep the inverting blend. */
+body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
+  mix-blend-mode: normal;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Desktop home filmstrip: current photo centred, dimmed neighbours on both sides, equal gaps. */
 .peek {
   position: fixed;
   inset: 0;
@@ -317,7 +343,7 @@ button {
   position: relative;
   display: flex;
   height: 100%;
-  gap: 40px;
+  gap: 6px;
   will-change: transform;
 }
 
@@ -336,7 +362,7 @@ button {
 
 .peek-item.is-prev,
 .peek-item.is-next {
-  opacity: 0.35;
+  opacity: 0.45;
 }
 
 .peek-item.is-current {
@@ -457,6 +483,13 @@ button {
 .zone:hover .zone-arrow,
 .zone:focus-visible .zone-arrow {
   opacity: 0.9;
+}
+
+/* The zones are invisible full-height click areas: a focus outline would draw as a stray
+   vertical line down the photo (click a side, then press an arrow key). The lit arrow
+   above already shows keyboard focus. */
+.zone:focus-visible {
+  outline: none;
 }
 
 .slideshow-meta {

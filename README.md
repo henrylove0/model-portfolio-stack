@@ -89,10 +89,13 @@ What's already built in, per device:
   immediately, and the home slideshow waits for the live list instead of first
   loading built-in images and then swapping them out.
 - **Desktop home (portrait sets):** when the portrait set ("Home Slideshow (Mobile)"
-  in the admin) has photos, wide screens show them as uncropped side-by-side pairs in a
-  sliding filmstrip, with dimmed edges of the previous and next pairs peeking in on
-  both sides as a cue to browse. Pairs follow the admin order (1+2, 3+4, …) — reorder
-  there to change them. Click an edge or use the arrow keys; it loops endlessly.
+  in the admin) has photos, wide screens show them as an uncropped sliding filmstrip:
+  one photo centred at a time, with the previous and next photos showing dimmed on both
+  sides as a cue to browse, and an equal thin gap between every photo. Order follows the
+  admin. Click a side or use the arrow keys; it loops endlessly.
+- **Readable menu over photos:** photo pages put a soft dark fade under the menu and show
+  it in plain white (the colour-inverting menu used elsewhere turns grey-on-grey over
+  mid-tone photos).
 - **Desktop:** arrow-key navigation, edge-click zones with hover arrows, `object-fit:
   cover` so vertical 4:5 images fill any window without distortion, fullscreen 4K
   quality on retina/4K displays.

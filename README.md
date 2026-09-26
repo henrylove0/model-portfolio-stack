@@ -195,6 +195,9 @@ npm install
   reorder or remove locations and their details, plus the email — the Contact menu
   follows. Text is saved with **Save changes**; you're warned before leaving unsaved
   edits.
+- **Projects only show once they have photos.** Empty galleries (and the Projects
+  menu, if none have photos yet) stay hidden from visitors, and the built-in
+  placeholder images never show next to real ones.
 - Drag a photo onto another slot to reorder; use its **Move to…** control to send it to
   a different gallery; retitle projects inline. Everything autosaves.
 - **Golden rule:** always add photos through the admin, never into cloud storage
@@ -213,6 +216,7 @@ rebuilds or adapts this entire stack from a single instruction.
 | `npm run build` | type-check + production build |
 | `npm run password` | generate `ADMIN_PASSWORD_HASH` + `SESSION_SECRET` |
 | `npm run photos` | bulk-convert `photos-src/` → `r2-upload/` (3840px WebP) |
+| `npm run og -- a.jpg b.jpg c.jpg` | build the link-preview image `public/og.jpg` (1200×630) from three photos — the card shown when the site is shared on Instagram, WhatsApp, iMessage, X |
 
 ## Layout
 

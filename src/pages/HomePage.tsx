@@ -3,6 +3,7 @@ import Slideshow from '../components/Slideshow'
 import PeekCarousel from '../components/PeekCarousel'
 import { useSite } from '../App'
 import { SITE_NAME } from '../site.config'
+import { hasRealPhotos, isPlaceholder } from '../lib/manifest'
 
 /** Matches the site's mobile breakpoint in styles.css. */
 const MOBILE_QUERY = '(max-width: 900px)'
@@ -24,8 +25,10 @@ export default function HomePage() {
   const portraits = manifest.homeMobile ?? []
   // Desktop uses "Home Slideshow (Desktop)" once it has real photos; until then the
   // mobile/portrait set, so desktop never falls back to the built-in placeholders.
-  const desktopHasPhotos = manifest.home.some((src) => !src.startsWith('/placeholders/'))
-  const desktop = desktopHasPhotos ? manifest.home : portraits
+  const desktop = useMemo(
+    () => (hasRealPhotos(manifest.home) ? manifest.home.filter((src) => !isPlaceholder(src)) : portraits),
+    [manifest.home, portraits],
+  )
   // Desktop filmstrip: one photo per step, centred, neighbours showing on both sides.
   const strip = useMemo(() => desktop.map((p) => [p]), [desktop])
 

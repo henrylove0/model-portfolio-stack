@@ -20,7 +20,45 @@ function r2Preconnect(url: string): Plugin {
   }
 }
 
+/**
+ * Link-preview tags (Open Graph + Twitter) so a shared link shows public/og.jpg with the
+ * page title and description. Scrapers need an absolute image URL: VITE_SITE_URL if set,
+ * else the Vercel production domain (VERCEL_PROJECT_PRODUCTION_URL, set during Vercel
+ * builds — it becomes the custom domain once one is attached).
+ */
+function socialMeta(siteUrl: string): Plugin {
+  return {
+    name: 'social-meta',
+    transformIndexHtml(html) {
+      const title = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? ''
+      const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? ''
+      const image = `${siteUrl}/og.jpg`
+      const meta = (attr: 'property' | 'name', key: string, content: string) => ({
+        tag: 'meta',
+        attrs: { [attr]: key, content },
+        injectTo: 'head' as const,
+      })
+      return [
+        meta('property', 'og:type', 'website'),
+        meta('property', 'og:title', title),
+        meta('property', 'og:description', description),
+        meta('property', 'og:image', image),
+        meta('property', 'og:image:width', '1200'),
+        meta('property', 'og:image:height', '630'),
+        ...(siteUrl ? [meta('property', 'og:url', `${siteUrl}/`)] : []),
+        meta('name', 'twitter:card', 'summary_large_image'),
+        meta('name', 'twitter:title', title),
+        meta('name', 'twitter:description', description),
+        meta('name', 'twitter:image', image),
+      ]
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
-  const r2 = (loadEnv(mode, process.cwd(), 'VITE_').VITE_R2_PUBLIC_URL ?? '').replace(/\/+$/, '')
-  return { plugins: [react(), r2Preconnect(r2)] }
+  const env = loadEnv(mode, process.cwd(), '')
+  const r2 = (env.VITE_R2_PUBLIC_URL ?? '').replace(/\/+$/, '')
+  const production = env.VERCEL_PROJECT_PRODUCTION_URL
+  const siteUrl = (env.VITE_SITE_URL || (production ? `https://${production}` : '')).replace(/\/+$/, '')
+  return { plugins: [react(), r2Preconnect(r2), socialMeta(siteUrl)] }
 })

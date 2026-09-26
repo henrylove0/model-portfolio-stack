@@ -34,6 +34,16 @@ export function imageUrl(src: string): string {
   return base ? `${base}/${src}` : src
 }
 
+/** Built-in placeholder art (shipped with the site), as opposed to an uploaded photo. */
+export function isPlaceholder(src: string): boolean {
+  return src.startsWith('/placeholders/')
+}
+
+/** True when a gallery has at least one real (uploaded) photo. */
+export function hasRealPhotos(images: string[]): boolean {
+  return images.some((src) => !isPlaceholder(src))
+}
+
 export function isSafeKey(key: unknown): key is string {
   return typeof key === 'string' && KEY_PATTERN.test(key)
 }

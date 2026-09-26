@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "photos": "node scripts/optimize-images.mjs",
-    "password": "node scripts/generate-password-hash.mjs"
+    "password": "node scripts/generate-password-hash.mjs",
+    "og": "node scripts/make-og-image.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.645.0",

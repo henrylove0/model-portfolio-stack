@@ -57,6 +57,10 @@ Builds a production model portfolio that serves 100+ high-res photos to ~1.6M mo
 
 ## Pitfalls (each one was a production bug)
 
+- **Hooks before any early return:** `Nav` returned `null` for `/admin` before calling its hooks, so moving between the site and `/admin` in one tab crashed (React #300) and dropped the menu. Put every hook first, then return.
+- **Empty galleries look broken:** the seeded manifest gives every project placeholder art. `hasRealPhotos()` (`src/lib/manifest.ts`) hides projects without an uploaded photo from the menu and redirects their URLs; galleries drop placeholders once real photos exist. `ProjectPage` waits for `settled` before redirecting — the built-in defaults have no real photos, so deciding earlier bounces visitors off real projects.
+- **Link previews need absolute URLs baked into `index.html`:** crawlers don't run JS. A Vite plugin injects Open Graph/Twitter tags pointing at `public/og.jpg` on `VITE_SITE_URL` or Vercel's `VERCEL_PROJECT_PRODUCTION_URL` (set during Vercel builds, follows the custom domain).
+
 - **ESM imports in `api/`:** with `"type": "module"`, Vercel-compiled functions need explicit extensions — `./_lib/auth.js`, not `./_lib/auth`. Extensionless imports fail at runtime with `ERR_MODULE_NOT_FOUND` (build and types pass silently).
 - **SPA rewrite destination is `/index`, not `/index.html`:** the Vite preset renames `index.html` to path `index` in its routing overrides, so `{"source":"/(.*)","destination":"/index.html"}` fails the filesystem check and every client route 404s. Use `"destination": "/index"`. Keep a single catch-all rewrite; do not add a self-rewriting `/api/(.*)→/api/$1` rule (breaks the table).
 - **wrangler CORS file:** must be wrapped `{"rules":[...]}` and use camelCase keys (`allowedOrigins`, not S3-style `AllowedOrigins`); PascalCase → "not well formed" (10040).
@@ -90,6 +94,7 @@ Builds a production model portfolio that serves 100+ high-res photos to ~1.6M mo
 | `npm run build` | type-check (src + api) + production build |
 | `npm run password` | generate `ADMIN_PASSWORD_HASH` + `SESSION_SECRET` |
 | `npm run photos` | bulk-convert `photos-src/` → `r2-upload/` (3840px WebP q85) |
+| `npm run og -- a b c` | link-preview image `public/og.jpg` (1200×630, three photos, attention crop) |
 | `vercel deploy --yes --prod` | manual production deploy |
 
 ## Launch checklist
@@ -102,3 +107,5 @@ Builds a production model portfolio that serves 100+ high-res photos to ~1.6M mo
 - [ ] Test upload end-to-end: drop photo → appears on site within 60 s → object served from the R2 domain (check DevTools Network: zero image bytes from Vercel)
 - [ ] Home page loads each photo once (DevTools Network: no image requested from both Vercel and R2)
 - [ ] Placeholder Instagram handle/email replaced with real ones
+- [ ] `public/og.jpg` rebuilt from real photos (`npm run og`); paste the URL into a chat app and check the preview card
+- [ ] `robots.txt` disallows `/admin`

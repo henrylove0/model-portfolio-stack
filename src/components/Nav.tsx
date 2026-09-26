@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import type { SiteManifest } from '../lib/types'
+import { hasRealPhotos } from '../lib/manifest'
 import { INSTAGRAM_URL, SITE_NAME } from '../site.config'
 import { DEFAULT_TEXT, locationId } from '../data/content'
 
@@ -37,10 +38,7 @@ export default function Nav({ manifest }: NavProps) {
   const [open, setOpen] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-
-  if (location.pathname.startsWith('/admin')) return null
-
-  const closeTimer = { current: 0 as number }
+  const closeTimer = useRef(0)
   const scheduleClose = () => {
     window.clearTimeout(closeTimer.current)
     closeTimer.current = window.setTimeout(() => setOpen(null), 220)
@@ -53,13 +51,24 @@ export default function Nav({ manifest }: NavProps) {
 
   useEffect(() => () => window.clearTimeout(closeTimer.current), [])
 
+  // After every hook: returning early before them breaks React's hook order when
+  // moving between the site and /admin in the same tab.
+  if (location.pathname.startsWith('/admin')) return null
+
+  // Only projects with uploaded photos are shown; empty galleries appear once filled.
+  const projects = manifest.projects.filter((p) => hasRealPhotos(p.images))
+
   const menu: MenuItem[] = [
     { label: 'Home', to: '/', items: [] },
-    {
-      label: 'Project',
-      to: `/project/${manifest.projects[0]?.slug ?? 'project-01'}`,
-      items: manifest.projects.map((p) => ({ label: p.title, to: `/project/${p.slug}` })),
-    },
+    ...(projects.length
+      ? [
+          {
+            label: 'Project',
+            to: `/project/${projects[0].slug}`,
+            items: projects.map((p) => ({ label: p.title, to: `/project/${p.slug}` })),
+          },
+        ]
+      : []),
     {
       label: 'About',
       to: '/about',

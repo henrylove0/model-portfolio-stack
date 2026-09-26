@@ -22,26 +22,35 @@ export default function HomePage() {
   const { manifest, settled } = useSite()
   const isMobile = useIsMobile()
   const portraits = manifest.homeMobile ?? []
-  // Desktop filmstrip: one portrait per step, centred, neighbours showing on both sides.
-  const strip = useMemo(() => portraits.map((p) => [p]), [portraits])
+  // Desktop uses "Home Slideshow (Desktop)" once it has real photos; until then the
+  // mobile/portrait set, so desktop never falls back to the built-in placeholders.
+  const desktopHasPhotos = manifest.home.some((src) => !src.startsWith('/placeholders/'))
+  const desktop = desktopHasPhotos ? manifest.home : portraits
+  // Desktop filmstrip: one photo per step, centred, neighbours showing on both sides.
+  const strip = useMemo(() => desktop.map((p) => [p]), [desktop])
 
   // Wait for the live photo list so each photo downloads once, not twice.
   if (!settled) return <div className="page page-full" />
 
-  return (
-    <div className="page page-full">
-      {/* Phones: one portrait at a time. Desktop/widescreen: a filmstrip of the same portraits,
-          uncropped, with the previous and next photos showing (dimmed) on both sides.
-          No portraits → the regular home slideshow. */}
-      {isMobile || portraits.length < 2 ? (
+  if (isMobile) {
+    return (
+      <div className="page page-full">
         <Slideshow
-          images={isMobile && portraits.length ? portraits : manifest.home}
+          images={portraits.length ? portraits : manifest.home}
           mode="fade"
           interval={5600}
           alt={SITE_NAME}
         />
-      ) : (
+      </div>
+    )
+  }
+
+  return (
+    <div className="page page-full">
+      {strip.length ? (
         <PeekCarousel groups={strip} interval={5600} alt={SITE_NAME} />
+      ) : (
+        <Slideshow images={manifest.home} mode="fade" interval={5600} alt={SITE_NAME} />
       )}
     </div>
   )

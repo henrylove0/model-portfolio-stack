@@ -53,6 +53,7 @@ function sanitize(input: any): unknown | null {
   if (typeof input.updatedAt !== 'string') return null
   if (!keys(input.home) || !keys(input.about) || !Array.isArray(input.projects)) return null
   if (input.homeMobile !== undefined && !keys(input.homeMobile)) return null
+  if (input.text !== undefined && !validText(input.text)) return null
   const projects = input.projects.map((p: any) => {
     if (typeof p !== 'object' || p === null) return null
     if (typeof p.slug !== 'string' || !/^[a-z0-9-]{1,40}$/.test(p.slug)) return null
@@ -62,6 +63,24 @@ function sanitize(input: any): unknown | null {
   })
   if (projects.some((p: unknown) => p === null)) return null
   return { ...input, projects }
+}
+
+/** Page text from the admin: exact shape, plain strings, bounded sizes. */
+function validText(t: any): boolean {
+  const str = (v: any, max: number) => typeof v === 'string' && v.length <= max
+  const list = (v: any, max: number, item: (x: any) => boolean) =>
+    Array.isArray(v) && v.length <= max && v.every(item)
+  return (
+    typeof t === 'object' &&
+    t !== null &&
+    str(t.storyTitle, 120) &&
+    str(t.storyLede, 400) &&
+    str(t.story, 20_000) &&
+    str(t.upcoming, 200) &&
+    str(t.email, 200) &&
+    list(t.stats, 30, (s) => typeof s === 'object' && s !== null && str(s.label, 60) && str(s.value, 120)) &&
+    list(t.contacts, 30, (c) => typeof c === 'object' && c !== null && str(c.location, 60) && str(c.details, 1000))
+  )
 }
 
 function keys(value: any): boolean {

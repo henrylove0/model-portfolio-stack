@@ -132,10 +132,11 @@ CMS product (the drag-and-drop admin is ~400 lines and fully yours).
 
 ## Customizing everything
 
-- **Identity** — `src/site.config.ts`: name, Instagram, email, agency locations,
+- **Identity** — `src/site.config.ts`: name, Instagram, email, starting agency locations,
   project count. The nav, pages, and admin all read from it.
-- **Bio, stats, story** — `src/pages/AboutPage.tsx`; agency/contact blocks in
-  `src/pages/ContactPage.tsx`.
+- **Story, measurements, upcoming location, contacts** — edited in the admin under
+  **Pages** (no code, live within a minute). The starting text comes from
+  `src/site.config.ts` and `src/data/content.ts`.
 - **Design** — CSS variables at the top of `src/styles.css` (colors, hairlines, font
   stack). Swap the typeface by changing the Google Fonts link in `index.html` +
   `--sans`.
@@ -153,8 +154,8 @@ npm install
 ```
 
 1. **Make it yours** — edit `src/site.config.ts` (name, Instagram, email, agencies,
-   number of projects). Update the bio/stats in `src/pages/AboutPage.tsx` and the
-   `<title>` in `index.html`.
+   number of projects) and the `<title>` in `index.html`. Story, measurements, upcoming
+   location and contacts are edited later in the admin.
 2. **Push** to your own GitHub repo.
 3. **Deploy** — [Vercel](https://vercel.com) → Add New Project → import the repo.
 4. **Create an R2 bucket** (Cloudflare dashboard) named `model-portfolio`, an API token
@@ -185,9 +186,15 @@ npm install
 
 ## Using the admin
 
-- Drop one or many photos onto a section (Home, Home (Mobile), About, or any
-  Project) — they queue
-  automatically and are converted to 4K WebP in your browser before upload.
+- Drop one or many photos onto a section (Home Slideshow (Desktop), Home Slideshow
+  (Mobile), or any Project) — they queue automatically and are converted to 4K WebP in
+  your browser before upload. Desktop shows the Desktop set once it has photos (until
+  then, the Mobile set).
+- **Pages → Story:** one photo plus name, intro line, story (empty line = new
+  paragraph) and measurements. **Upcoming Location:** one line. **Contacts:** add,
+  reorder or remove locations and their details, plus the email — the Contact menu
+  follows. Text is saved with **Save changes**; you're warned before leaving unsaved
+  edits.
 - Drag a photo onto another slot to reorder; use its **Move to…** control to send it to
   a different gallery; retitle projects inline. Everything autosaves.
 - **Golden rule:** always add photos through the admin, never into cloud storage

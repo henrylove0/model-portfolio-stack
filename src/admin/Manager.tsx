@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSite } from '../App'
 import { fetchManifest, imageUrl } from '../lib/manifest'
-import { emptyManifest, type Project, type SiteManifest } from '../lib/types'
+import { emptyManifest, type Project, type SiteManifest, type SiteText } from '../lib/types'
+import { DEFAULT_TEXT } from '../data/content'
+import TextEditor from './TextEditor'
 import { SITE_NAME } from '../site.config'
+
+/** Sections that are text only (no photos). */
+const TEXT_ONLY_TABS = ['upcoming', 'contacts']
+
+const TAB_TITLES: Record<string, string> = {
+  home: 'Home Slideshow (Desktop)',
+  'home-mobile': 'Home Slideshow (Mobile)',
+  about: 'Story',
+  upcoming: 'Upcoming Location',
+  contacts: 'Contacts',
+}
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -14,9 +27,9 @@ const STATUS_LABEL: Record<SaveState, string> = {
 }
 
 const MOVE_TARGETS: { value: string; label: string }[] = [
-  { value: 'home', label: 'Home Slideshow' },
+  { value: 'home', label: 'Home Slideshow (Desktop)' },
   { value: 'home-mobile', label: 'Home Slideshow (Mobile)' },
-  { value: 'about', label: 'About Photo' },
+  { value: 'about', label: 'Story photo' },
 ]
 
 /** Resize + convert to WebP in the browser, so the server just stores bytes. */
@@ -80,12 +93,14 @@ export default function Manager({ onLogout }: ManagerProps) {
   const replaceInput = useRef<HTMLInputElement>(null)
   const replaceIndex = useRef(-1)
 
+  const [textDirty, setTextDirty] = useState(false)
+
   useEffect(() => {
     fetchManifest().then((m) => setManifest(m ?? emptyManifest()))
   }, [])
 
   const persist = useCallback(
-    async (next: SiteManifest) => {
+    async (next: SiteManifest): Promise<boolean> => {
       setManifest(next)
       setSave('saving')
       try {
@@ -97,12 +112,35 @@ export default function Manager({ onLogout }: ManagerProps) {
         if (!res.ok) throw new Error('save failed')
         setSave('saved')
         reload()
+        return true
       } catch {
         setSave('error')
+        return false
       }
     },
     [reload],
   )
+
+  /** Saved page text, with built-in defaults for anything not saved yet. */
+  const savedText = useMemo<SiteText>(() => ({ ...DEFAULT_TEXT, ...(manifest?.text ?? {}) }), [manifest?.text])
+
+  const saveText = useCallback(
+    async (text: SiteText) => {
+      if (!manifest) return false
+      const ok = await persist({ ...manifest, updatedAt: new Date().toISOString(), text })
+      // Failed: put the previous saved state back; the editor keeps the unsaved draft.
+      if (!ok) setManifest(manifest)
+      return ok
+    },
+    [manifest, persist],
+  )
+
+  const openTab = (next: string) => {
+    if (next === tab) return
+    if (textDirty && !window.confirm('You have unsaved text changes. Leave without saving?')) return
+    setTextDirty(false)
+    setTab(next)
+  }
 
   const logout = async () => {
     await fetch('/api/logout', { method: 'POST' }).catch(() => undefined)
@@ -283,24 +321,24 @@ export default function Manager({ onLogout }: ManagerProps) {
       <aside className="admin-side">
         <span className="admin-side-mark">{SITE_NAME}</span>
         <nav className="admin-tabs">
-          <button className={tab === 'home' ? 'is-active' : ''} onClick={() => setTab('home')}>
-            Home Slideshow
-          </button>
-          <button
-            className={tab === 'home-mobile' ? 'is-active' : ''}
-            onClick={() => setTab('home-mobile')}
-          >
-            Home Slideshow (Mobile)
-          </button>
-          <button className={tab === 'about' ? 'is-active' : ''} onClick={() => setTab('about')}>
-            About Photo
-          </button>
+          <span className="admin-tabs-group">Home</span>
+          {['home', 'home-mobile'].map((t) => (
+            <button key={t} className={tab === t ? 'is-active' : ''} onClick={() => openTab(t)}>
+              {TAB_TITLES[t]}
+            </button>
+          ))}
+          <span className="admin-tabs-group">Pages</span>
+          {['about', 'upcoming', 'contacts'].map((t) => (
+            <button key={t} className={tab === t ? 'is-active' : ''} onClick={() => openTab(t)}>
+              {TAB_TITLES[t]}
+            </button>
+          ))}
           <span className="admin-tabs-group">Projects</span>
           {manifest.projects.map((p: Project) => (
             <button
               key={p.slug}
               className={tab === p.slug ? 'is-active' : ''}
-              onClick={() => setTab(p.slug)}
+              onClick={() => openTab(p.slug)}
             >
               {p.title}
             </button>
@@ -312,13 +350,7 @@ export default function Manager({ onLogout }: ManagerProps) {
         <header className="admin-head">
           <div>
             <h1 className="admin-title">
-              {tab === 'home'
-                ? 'Home Slideshow'
-                : tab === 'home-mobile'
-                  ? 'Home Slideshow (Mobile)'
-                  : tab === 'about'
-                    ? 'About Photo'
-                    : (project?.title ?? tab)}
+              {TAB_TITLES[tab] ?? project?.title ?? tab}
             </h1>
             {project && (
               <input
@@ -344,6 +376,9 @@ export default function Manager({ onLogout }: ManagerProps) {
           </div>
         </header>
 
+        {tab === 'about' && <p className="admin-section-label">Photo (one photo, shown above her story)</p>}
+
+        {!TEXT_ONLY_TABS.includes(tab) && (
         <div className="admin-slots">
           {images.map((src, i) => (
             <div
@@ -431,6 +466,7 @@ export default function Manager({ onLogout }: ManagerProps) {
             </div>
           ))}
 
+          {!(tab === 'about' && images.length >= 1) && (
           <div
             className={`admin-add${dropTarget === 'add' || reorderTarget === 'add' ? ' is-drop' : ''}`}
             onDragOver={(e) => {
@@ -454,14 +490,29 @@ export default function Manager({ onLogout }: ManagerProps) {
                 : 'Drop new images here, or click to select'}
             </span>
           </div>
+          )}
         </div>
+        )}
 
-        <p className="admin-hint">
-          Drop a file onto a photo to replace it. Drag a photo onto another slot to reorder, or
-          use “Move to…” to send it to a different slideshow — changes save automatically.
-          New files are converted to WebP (up to 3840px / 4K, adaptive quality) before upload;
-          6000×9000 originals are no problem.
-        </p>
+        {!TEXT_ONLY_TABS.includes(tab) && (
+          <p className="admin-hint">
+            {tab === 'about'
+              ? 'Drop a file onto the photo (or click it) to replace it — saves automatically.'
+              : 'Drop a file onto a photo to replace it. Drag a photo onto another slot to reorder, or use “Move to…” to send it to a different slideshow — changes save automatically.'}{' '}
+            New files are converted to WebP (up to 3840px / 4K, adaptive quality) before upload;
+            6000×9000 originals are no problem.
+          </p>
+        )}
+
+        {(tab === 'about' || TEXT_ONLY_TABS.includes(tab)) && (
+          <TextEditor
+            key={tab}
+            section={tab === 'about' ? 'story' : (tab as 'upcoming' | 'contacts')}
+            text={savedText}
+            onSave={saveText}
+            onDirtyChange={setTextDirty}
+          />
+        )}
       </section>
     </div>
   )

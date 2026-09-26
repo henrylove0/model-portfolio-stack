@@ -8,7 +8,11 @@ export const SITE_TITLE = 'Your Name — Model'
 export const INSTAGRAM_URL = 'https://instagram.com/yourhandle'
 export const CONTACT_EMAIL = 'hello@yourdomain.com'
 
-/** Contact-page agencies — the Contact nav dropdown and page read this. */
+/**
+ * Starting contact locations (with CONTACT_EMAIL and SITE_NAME, the starting page text).
+ * After launch these are edited in /admin → Pages → Contacts / Story, which overrides
+ * what is written here.
+ */
 export const AGENCIES: { location: string; contact: string }[] = [
   { location: 'New York', contact: 'Agency Name — enquiries placeholder' },
   { location: 'Paris', contact: 'Agency Name — enquiries placeholder' },

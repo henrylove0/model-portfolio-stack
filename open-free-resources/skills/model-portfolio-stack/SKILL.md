@@ -20,7 +20,7 @@ Builds a production model portfolio that serves 100+ high-res photos to ~1.6M mo
 - **Auth:** scrypt password hash in env (`salt:hex`), HMAC-signed HttpOnly cookie session (7 days), per-IP login throttle. No auth provider needed.
 - **Uploads:** browser converts to WebP (max 3840px long edge, q0.85 with adaptive fallback under 3.8 MB), POSTs raw bytes to `/api/upload`, function stores in R2. Vercel's 4.5 MB body limit is why conversion happens client-side.
 - **Load-once flow:** a Vite plugin (`vite.config.ts`) injects into `index.html` an inline script that starts the `_manifest.json` fetch before the app bundle downloads (`window.__siteManifest`, consumed by `fetchManifest()`), plus two `preconnect` links to the R2 host (one CORS for the manifest, one no-cors for `<img>`). `App` exposes `settled`; the home slideshow renders only once the live manifest has arrived (3 s timeout → built-in defaults), so no photo is downloaded twice.
-- **Portrait home set:** optional `homeMobile` list (admin section "Home Slideshow (Mobile)"). Under 900px it's a one-at-a-time slideshow. On wider screens `PeekCarousel` shows it as an uncropped sliding filmstrip, one photo centred per step, neighbours at 30% opacity on both sides, uniform 6px gaps (pairs were tried first: the gap inside a pair vs between pairs read as uneven); it loops by rendering the strip three times and silently re-centring on the middle copy after each transition. Never fit portraits into a 16:9 frame with `object-fit: cover` — full-body shots lose heads or legs. With no portraits, both fall back to `home`.
+- **Portrait home set:** optional `homeMobile` list (admin section "Home Slideshow (Mobile)"). Under 900px it's a one-at-a-time slideshow. On wider screens `PeekCarousel` shows it as an uncropped sliding filmstrip, one photo centred per step, neighbours at 30% opacity on both sides, uniform 6px gaps (pairs were tried first: the gap inside a pair vs between pairs read as uneven); it loops by rendering the strip three times and silently re-centring on the middle copy after each transition. Never fit portraits into a 16:9 frame with `object-fit: cover` — full-body shots lose heads or legs. Desktop uses the `home` list ("Home Slideshow (Desktop)") once it holds real photos (anything not under `/placeholders/`), otherwise the portrait set; phones use the portrait set, falling back to `home`.
 - **Fallbacks:** if the direct R2 manifest fetch fails (CORS/absent), the client falls back to same-origin `/api/manifest`, then to built-in placeholder images. An empty section renders a branded placeholder slide, never a broken page.
 
 ## Non-negotiables (the free-tier rules)
@@ -77,10 +77,8 @@ Builds a production model portfolio that serves 100+ high-res photos to ~1.6M mo
 
 ## Customization points
 
-- `src/lib/config.ts` — Instagram URL, contact email, R2 public base.
-- `src/data/content.ts` — agency/contact locations (nav dropdown + contact page read this).
-- `src/lib/types.ts` (`PROJECT_SLUGS`) — number of projects (20 by default).
-- `src/pages/AboutPage.tsx`, `ContactPage.tsx` — bio text, stats, agency details.
+- `src/site.config.ts` — name, Instagram URL, contact email, starting agency locations, project count, R2 public base.
+- Page text (story, measurements, upcoming location, contact locations + email) is `manifest.text`, edited in `/admin` → Pages (`src/admin/TextEditor.tsx`: local draft + explicit Save, unsaved-changes guard, draft kept on failed save). Starting values: `DEFAULT_TEXT` in `src/data/content.ts` (built from `site.config.ts`); the Contact page and Contact menu read `text.contacts`. `api/manifest.ts` validates the text shape and sizes.
 - Font: default Jost (free stand-in for emrata.com's Futura PT) — swap the Google Fonts link in `index.html` + `--sans` in `src/styles.css`.
 - `public/placeholders/` — regenerate via `node scripts/make-placeholders.mjs` with new wordmark/copy.
 

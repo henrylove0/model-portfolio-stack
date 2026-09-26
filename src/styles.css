@@ -556,19 +556,28 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
 
 /* About */
 
-.about-grid {
-  max-width: 1180px;
+/* Story: one photo, her story below it. */
+.about-story {
+  max-width: 720px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 5fr 6fr;
-  gap: clamp(40px, 7vw, 90px);
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(36px, 5vw, 56px);
 }
 
 .about-photo {
   aspect-ratio: 4 / 5;
   overflow: hidden;
   background: #e4dfd6;
+}
+
+.about-body .about-text {
+  max-width: none;
+  margin-bottom: 20px;
+}
+
+.about-body .about-text:last-of-type {
+  margin-bottom: 40px;
 }
 
 .about-photo img {
@@ -1136,6 +1145,157 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
   max-width: 660px;
 }
 
+/* ---- Page text editing (Story, Upcoming Location, Contacts) ---- */
+
+.admin-section-label {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.admin-text {
+  max-width: 720px;
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-field > span {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-field small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-field input,
+.admin-field textarea {
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.45);
+  border: var(--hairline);
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.admin-field textarea {
+  resize: vertical;
+}
+
+.admin-field input:focus,
+.admin-field textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.admin-row-contact {
+  grid-template-columns: 0.8fr 2fr auto;
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.admin-row-actions button,
+.admin-add-row,
+.admin-save-btn,
+.admin-discard-btn {
+  font: inherit;
+  background: none;
+  border: var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.admin-row-actions button {
+  width: 34px;
+  height: 42px;
+  font-size: 13px;
+}
+
+.admin-row-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.admin-row-actions .is-danger:hover {
+  color: #a4443c;
+  border-color: #a4443c;
+}
+
+.admin-add-row {
+  align-self: flex-start;
+  padding: 8px 14px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.admin-text-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  bottom: 0;
+  padding: 16px 0;
+  background: var(--bg);
+  border-top: var(--hairline);
+}
+
+.admin-save-btn {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  padding: 11px 22px;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.admin-save-btn:disabled {
+  background: none;
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: default;
+}
+
+.admin-discard-btn {
+  padding: 11px 18px;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 560px) {
+  .admin-row,
+  .admin-row-contact {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --------------------------- RESPONSIVE --------------------------- */
 
 @media (max-width: 900px) {
@@ -1145,14 +1305,6 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
 
   .nav-burger {
     display: flex;
-  }
-
-  .about-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .about-photo {
-    max-width: 480px;
   }
 
   .admin {

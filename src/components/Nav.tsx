@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import type { SiteManifest } from '../lib/types'
-import { AGENCIES, INSTAGRAM_URL, SITE_NAME } from '../site.config'
+import { INSTAGRAM_URL, SITE_NAME } from '../site.config'
+import { DEFAULT_TEXT, locationId } from '../data/content'
 
 interface NavProps {
   manifest: SiteManifest
@@ -70,9 +71,9 @@ export default function Nav({ manifest }: NavProps) {
     {
       label: 'Contact',
       to: '/contact',
-      items: AGENCIES.map((a) => ({
-        label: a.location,
-        to: `/contact#${a.location.toLowerCase()}`,
+      items: (manifest.text ?? DEFAULT_TEXT).contacts.map((c) => ({
+        label: c.location,
+        to: `/contact#${locationId(c.location)}`,
       })),
     },
   ]

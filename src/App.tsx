@@ -7,6 +7,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import AdminApp from './admin/AdminApp'
 import { defaultManifest } from './data/defaultManifest'
+import { DEFAULT_TEXT } from './data/content'
 import { fetchManifest } from './lib/manifest'
 import type { SiteManifest } from './lib/types'
 
@@ -107,5 +108,6 @@ function mergeWithDefaults(live: SiteManifest): SiteManifest {
     return found ? { ...d, title: found.title || d.title, images: found.images } : d
   })
   const homeMobile = live.homeMobile ?? defaultManifest.homeMobile
-  return { ...live, homeMobile, projects }
+  const text = { ...DEFAULT_TEXT, ...(live.text ?? {}) }
+  return { ...live, homeMobile, projects, text }
 }

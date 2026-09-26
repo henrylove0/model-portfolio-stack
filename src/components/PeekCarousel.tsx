@@ -26,49 +26,65 @@ export default function PeekCarousel({ groups, interval = 5600, alt = SITE_NAME 
   const [pos, setPos] = useState(start)
   const posRef = useRef(pos)
   posRef.current = pos
-  const [animate, setAnimate] = useState(false)
-  const [offset, setOffset] = useState(0)
   const [loaded, setLoaded] = useState<Set<string>>(new Set())
   const itemRefs = useRef<(HTMLDivElement | null)[]>([])
+  const trackRef = useRef<HTMLDivElement>(null)
+  /** true when the next position change is a user/auto move (slides); false = silent jump */
+  const slideNext = useRef(false)
+  /** true while a slide animation is running */
+  const moving = useRef(false)
   const retry = usePhotoRetry<HTMLDivElement>()
   const { reset: resetRetry } = retry
 
   // New photo set → back to the first slide.
   useEffect(() => {
-    setAnimate(false)
+    slideNext.current = false
     setPos(start)
     setLoaded(new Set())
     resetRetry()
   }, [groups, start, resetRetry])
 
-  // Centre the current slide in the viewport.
-  const measure = useCallback(() => {
-    const el = itemRefs.current[pos]
-    const root = retry.rootRef.current
-    if (!el || !root) return
-    setOffset(root.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2))
-  }, [pos, retry.rootRef])
+  /**
+   * Put the current slide dead centre. Only moves between slides animate; re-centring
+   * because a photo finished loading or the window resized snaps instantly — otherwise
+   * the strip visibly drifts while photos arrive (worst in Safari).
+   */
+  const place = useCallback(
+    (animated: boolean) => {
+      const track = trackRef.current
+      const el = itemRefs.current[posRef.current]
+      const root = retry.rootRef.current
+      if (!track || !el || !root) return
+      const x = root.clientWidth / 2 - (el.offsetLeft + el.offsetWidth / 2)
+      track.style.transition = animated ? `transform ${SLIDE_MS}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none'
+      track.style.transform = `translate3d(${x}px, 0, 0)`
+      moving.current = animated
+      if (!animated) void track.offsetWidth // commit the jump before any later transition
+    },
+    [retry.rootRef],
+  )
 
+  // Position change: slide for a move, snap for the silent loop jump.
   useLayoutEffect(() => {
-    measure()
-  }, [measure, loaded])
+    place(slideNext.current)
+    slideNext.current = false
+  }, [pos, place])
+
+  // A photo finished loading (widths changed) → re-centre; keep sliding if mid-move.
+  useLayoutEffect(() => {
+    place(moving.current)
+  }, [loaded, place])
 
   useEffect(() => {
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [measure])
-
-  // Re-enable the slide animation one frame after a silent jump.
-  useEffect(() => {
-    if (animate) return
-    const id = requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)))
-    return () => cancelAnimationFrame(id)
-  }, [animate])
+    const onResize = () => place(false)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [place])
 
   const go = useCallback(
     (dir: 1 | -1) => {
       if (n < 2) return
-      setAnimate(true)
+      slideNext.current = true
       setPos((p) => Math.max(0, Math.min(items.length - 1, p + dir)))
     },
     [n, items.length],
@@ -77,9 +93,10 @@ export default function PeekCarousel({ groups, interval = 5600, alt = SITE_NAME 
   // After sliding into the outer copies, jump (without animation) to the same slide in the middle copy.
   const onTransitionEnd = (e: React.TransitionEvent) => {
     if (e.target !== e.currentTarget || n < 2) return
+    moving.current = false
     const p = posRef.current
     if (p < n || p >= 2 * n) {
-      setAnimate(false)
+      slideNext.current = false
       setPos(((p % n) + n) % n + n)
     }
   }
@@ -117,8 +134,9 @@ export default function PeekCarousel({ groups, interval = 5600, alt = SITE_NAME 
   return (
     <div ref={retry.rootRef} className="peek">
       <div
-        className={`peek-track${animate ? ' is-animating' : ''}`}
-        style={{ transform: `translate3d(${offset}px, 0, 0)`, '--slide-ms': `${SLIDE_MS}ms` } as React.CSSProperties}
+        ref={trackRef}
+        className="peek-track"
+        style={{ '--slide-ms': `${SLIDE_MS}ms` } as React.CSSProperties}
         onTransitionEnd={onTransitionEnd}
       >
         {items.map((photos, i) => {

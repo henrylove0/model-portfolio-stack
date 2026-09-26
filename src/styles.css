@@ -347,10 +347,6 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
   will-change: transform;
 }
 
-.peek-track.is-animating {
-  transition: transform var(--slide-ms, 900ms) cubic-bezier(0.65, 0, 0.35, 1);
-}
-
 .peek-item {
   flex: 0 0 auto;
   display: flex;
@@ -362,7 +358,7 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
 
 .peek-item.is-prev,
 .peek-item.is-next {
-  opacity: 0.45;
+  opacity: 0.3;
 }
 
 .peek-item.is-current {
@@ -373,6 +369,9 @@ body:has(.slideshow, .peek):not(:has(.nav-mobile.is-open)) .nav-bar {
   display: block;
   height: 100%;
   width: auto;
+  /* Reserve portrait-shaped space before the photo loads (real shape once loaded), so
+     the strip does not shift as photos arrive. */
+  aspect-ratio: auto 2 / 3;
   opacity: 0;
   transition: opacity 0.8s ease;
   user-select: none;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { imageUrl } from '../lib/manifest'
+import { usePhotoRetry } from '../lib/usePhotoRetry'
 import { SITE_NAME } from '../site.config'
 
 interface Slide {
@@ -22,15 +23,6 @@ interface SlideshowProps {
 }
 
 const TRANSITION_MS = 1000
-/** Backoff before re-requesting a photo whose download failed (ms). Keeps retrying at the last value. */
-const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 15000]
-
-/** Photo URL, with a retry marker so a failed request isn't served from the browser's error cache. */
-function slideSrc(src: string, attempt: number): string {
-  const url = imageUrl(src)
-  if (!attempt) return url
-  return `${url}${url.includes('?') ? '&' : '?'}retry=${attempt}`
-}
 
 export default function Slideshow({
   images,
@@ -43,10 +35,9 @@ export default function Slideshow({
   const keyRef = useRef(0)
   const [stack, setStack] = useState<Slide[]>(() => [{ key: 0, index: 0, dir: 1, exiting: false }])
   const [loaded, setLoaded] = useState<Set<number>>(new Set())
-  /** slide key → how many times its photo has been re-requested after a failed load */
-  const [attempts, setAttempts] = useState<Record<number, number>>({})
-  const retryTimers = useRef<Map<number, number>>(new Map())
   const touchX = useRef<number | null>(null)
+  const retry = usePhotoRetry<HTMLDivElement>()
+  const { reset: resetRetry, retryNow } = retry
 
   const current = stack[stack.length - 1]
 
@@ -56,63 +47,20 @@ export default function Slideshow({
     keyRef.current += 1
     setStack([{ key: keyRef.current, index: 0, dir: 1, exiting: false }])
     setLoaded(new Set())
-    setAttempts({})
-  }, [images])
-
-  const retryNow = useCallback((key: number) => {
-    const timer = retryTimers.current.get(key)
-    if (timer !== undefined) window.clearTimeout(timer)
-    retryTimers.current.delete(key)
-    setAttempts((a) => ({ ...a, [key]: (a[key] ?? 0) + 1 }))
-  }, [])
-
-  // A failed download (dropped connection, request cancelled while the phone had the
-  // browser in the background, rate limit) would otherwise leave the slide black for good.
-  const onImageError = (key: number) => {
-    if (retryTimers.current.has(key)) return
-    const n = attempts[key] ?? 0
-    const delay = RETRY_DELAYS_MS[Math.min(n, RETRY_DELAYS_MS.length - 1)]
-    retryTimers.current.set(key, window.setTimeout(() => retryNow(key), delay))
-  }
-
-  // Coming back to the page (app switch, back/forward cache, network back): re-request
-  // any photo whose download ended without an image. Photos still downloading are left alone.
-  const rootRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const recheck = () => {
-      if (document.hidden) return
-      rootRef.current?.querySelectorAll<HTMLImageElement>('img[data-slide-key]').forEach((el) => {
-        if (el.complete && el.naturalWidth === 0) retryNow(Number(el.dataset.slideKey))
-      })
-    }
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) recheck()
-    }
-    document.addEventListener('visibilitychange', recheck)
-    window.addEventListener('pageshow', onPageShow)
-    window.addEventListener('online', recheck)
-    return () => {
-      document.removeEventListener('visibilitychange', recheck)
-      window.removeEventListener('pageshow', onPageShow)
-      window.removeEventListener('online', recheck)
-    }
-  }, [retryNow])
+    resetRetry()
+  }, [images, resetRetry])
 
   // Watchdog: a request that hangs never fires load or error — re-request it after a while.
-  const currentAttempt = attempts[current.key] ?? 0
+  const currentKey = String(current.key)
+  const currentAttempt = retry.attempts[currentKey] ?? 0
   const currentLoaded = loaded.has(current.key)
   useEffect(() => {
     if (count === 0 || currentLoaded) return
     const id = window.setTimeout(() => {
-      if (!document.hidden) retryNow(current.key)
+      if (!document.hidden) retryNow(currentKey)
     }, 12000)
     return () => window.clearTimeout(id)
-  }, [current.key, currentAttempt, currentLoaded, count, retryNow])
-
-  useEffect(() => {
-    const timers = retryTimers.current
-    return () => timers.forEach((t) => window.clearTimeout(t))
-  }, [])
+  }, [currentKey, currentAttempt, currentLoaded, count, retryNow])
 
   const go = useCallback(
     (dir: 1 | -1) => {
@@ -183,7 +131,7 @@ export default function Slideshow({
   }
 
   return (
-    <div ref={rootRef} className={`slideshow slideshow-${mode}`}>
+    <div ref={retry.rootRef} className={`slideshow slideshow-${mode}`}>
       {stack.map((slide) => (
         <div
           key={slide.key}
@@ -195,15 +143,11 @@ export default function Slideshow({
           style={{ '--dir': slide.dir } as React.CSSProperties}
         >
           <img
-            src={slideSrc(images[slide.index], attempts[slide.key] ?? 0)}
+            src={retry.photoSrc(String(slide.key), images[slide.index])}
             alt={`${alt} — ${slide.index + 1} of ${count}`}
-            data-slide-key={slide.key}
-            ref={(el) => {
-              // Already decoded (e.g. from cache) before React attached onLoad.
-              if (el && el.complete && el.naturalWidth > 0) markLoaded(slide.key)
-            }}
+            data-photo-key={slide.key}
             onLoad={() => markLoaded(slide.key)}
-            onError={() => onImageError(slide.key)}
+            onError={() => retry.onError(String(slide.key))}
             draggable={false}
           />
         </div>
